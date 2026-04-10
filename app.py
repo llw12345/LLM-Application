@@ -1,4 +1,7 @@
+# [[C:\Users\leong\Desktop\LLM-Application\app.py]]
+
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from chains.sentiment import sentiment
 from chains.summarizer import summarize
@@ -7,32 +10,47 @@ from agents.executor import run_agent
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 class TextInput(BaseModel):
     user_id: str
     text: str
 
 @app.post("/summarize")
 def summarize_route(input: TextInput):
-    return {"summary": summarize(input.text)}
+    return {"summary": str(summarize(input.text))}
 
 @app.post("/sentiment")
 def sentiment_route(input: TextInput):
-    return {"sentiment": sentiment(input.text)}
+    return {"sentiment": str(sentiment(input.text))}
 
 @app.post("/chat")
 def chat_route(input: TextInput):
-    return {"reply": chat(input.user_id, input.text)}
+    return {"reply": str(chat(input.user_id, input.text))}
 
 @app.post("/agent")
 def agent_route(input: TextInput):
     print("inside agent_route function in app.py")
-    return {"result": run_agent(input.user_id, input.text)}
+    result = run_agent(input.user_id, input.text)
+    return {
+        "result": {
+            "output": result.get("output", ""),
+            "chat_history": result.get("chat_history", [])
+        }
+    }
 
 @app.post("/run-all")
 def run_all(input: TextInput):
-    print("inside run_all function in app.py")
     return {
-        "summary": summarize(input.text),
-        "sentiment": sentiment(input.text),
-        "chat_reply": chat(input.user_id, input.text),
+        "summary": str(summarize(input.text)),
+        "sentiment": str(sentiment(input.text)),
+        "chat_reply": str(chat(input.user_id, input.text)),
     }
+
+# [[codefulty.com]]
